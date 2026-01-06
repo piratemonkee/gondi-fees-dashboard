@@ -52,9 +52,9 @@ export async function GET(request: Request) {
         }
       },
       apiEndpoints: {
-        token: `https://api.etherscan.io/v2/api?chainid=1&module=account&action=tokentx&address=0x4169447a424ec645f8a24dccfd8328f714dd5562&startblock=0&endblock=99999999&sort=asc&apikey=${process.env.ETHERSCAN_API_KEY ? '[PRESENT]' : '[MISSING]'}`,
-        internal: `https://api.etherscan.io/v2/api?chainid=1&module=account&action=txlistinternal&address=0x4169447a424ec645f8a24dccfd8328f714dd5562&startblock=0&endblock=99999999&sort=asc&apikey=${process.env.ETHERSCAN_API_KEY ? '[PRESENT]' : '[MISSING]'}`,
-        normal: `https://api.etherscan.io/v2/api?chainid=1&module=account&action=txlist&address=0x4169447a424ec645f8a24dccfd8328f714dd5562&startblock=0&endblock=99999999&sort=asc&apikey=${process.env.ETHERSCAN_API_KEY ? '[PRESENT]' : '[MISSING]'}`
+        token: `https://api.etherscan.io/api?module=account&action=tokentx&address=0x4169447a424ec645f8a24dccfd8328f714dd5562&startblock=0&endblock=99999999&sort=asc&apikey=${process.env.ETHERSCAN_API_KEY ? '[PRESENT]' : '[MISSING]'}`,
+        internal: `https://api.etherscan.io/api?module=account&action=txlistinternal&address=0x4169447a424ec645f8a24dccfd8328f714dd5562&startblock=0&endblock=99999999&sort=asc&apikey=${process.env.ETHERSCAN_API_KEY ? '[PRESENT]' : '[MISSING]'}`,
+        normal: `https://api.etherscan.io/api?module=account&action=txlist&address=0x4169447a424ec645f8a24dccfd8328f714dd5562&startblock=0&endblock=99999999&sort=asc&apikey=${process.env.ETHERSCAN_API_KEY ? '[PRESENT]' : '[MISSING]'}`
       }
     };
 
