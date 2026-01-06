@@ -138,59 +138,13 @@ export async function fetchEthereumTransactions(): Promise<Transaction[]> {
     
     console.log('🔗 Starting parallel API calls...');
     
-    // Add timing and detailed execution tracking
+    // EXACT COPY OF LOCAL LOGIC: Use Promise.allSettled like local environment
     const callStartTime = Date.now();
-    
-    // PRODUCTION FIX: Use sequential calls instead of Promise.allSettled to avoid timeout issues
-    // This ensures token transactions (USDC/WETH) are processed properly in production
-    let tokenResults: PromiseSettledResult<any[]>;
-    let internalResults: PromiseSettledResult<any[]>;
-    let normalResults: PromiseSettledResult<any[]>;
-    
-    try {
-      // First: Fetch token transactions (USDC/WETH) - this is the critical failing call
-      console.log('⏱️  STARTING Token API call (USDC/WETH) - SEQUENTIAL MODE');
-      const tokenStart = Date.now();
-      const tokenData = await fetchWithRetry(tokenUrl);
-      tokenResults = { status: 'fulfilled', value: tokenData } as PromiseFulfilledResult<any[]>;
-      console.log(`⏱️  COMPLETED Token API call in ${Date.now() - tokenStart}ms - Got ${tokenData.length} results`);
-      
-      // CRITICAL: Log contract addresses and symbols in the response
-      if (tokenData.length > 0) {
-        const contracts = new Set(tokenData.map(tx => tx.contractAddress?.toLowerCase()));
-        const symbols = new Set(tokenData.map(tx => tx.tokenSymbol));
-        console.log(`📊 Token contracts in response: [${Array.from(contracts).join(', ')}]`);
-        console.log(`📊 Token symbols in response: [${Array.from(symbols).join(', ')}]`);
-        console.log(`📊 Expected contracts: [${USDC_CONTRACT.toLowerCase()}, ${WETH_CONTRACT.toLowerCase()}]`);
-      }
-    } catch (error) {
-      console.log(`⏱️  FAILED Token API call - Error:`, error);
-      tokenResults = { status: 'rejected', reason: error } as PromiseRejectedResult;
-    }
-    
-    try {
-      // Second: Fetch internal ETH transactions
-      console.log('⏱️  STARTING Internal ETH API call - SEQUENTIAL MODE');
-      const internalStart = Date.now();
-      const internalData = await fetchWithRetry(internalUrl);
-      internalResults = { status: 'fulfilled', value: internalData } as PromiseFulfilledResult<any[]>;
-      console.log(`⏱️  COMPLETED Internal ETH API call in ${Date.now() - internalStart}ms - Got ${internalData.length} results`);
-    } catch (error) {
-      console.log(`⏱️  FAILED Internal ETH API call - Error:`, error);
-      internalResults = { status: 'rejected', reason: error } as PromiseRejectedResult;
-    }
-    
-    try {
-      // Third: Fetch normal ETH transactions
-      console.log('⏱️  STARTING Normal ETH API call - SEQUENTIAL MODE');
-      const normalStart = Date.now();
-      const normalData = await fetchWithRetry(normalUrl);
-      normalResults = { status: 'fulfilled', value: normalData } as PromiseFulfilledResult<any[]>;
-      console.log(`⏱️  COMPLETED Normal ETH API call in ${Date.now() - normalStart}ms - Got ${normalData.length} results`);
-    } catch (error) {
-      console.log(`⏱️  FAILED Normal ETH API call - Error:`, error);
-      normalResults = { status: 'rejected', reason: error } as PromiseRejectedResult;
-    }
+    const [tokenResults, internalResults, normalResults] = await Promise.allSettled([
+      fetchWithRetry(tokenUrl),
+      fetchWithRetry(internalUrl), 
+      fetchWithRetry(normalUrl)
+    ]);
     
     console.log(`⏱️  ALL API CALLS COMPLETED in ${Date.now() - callStartTime}ms`);
     console.log('📊 === DETAILED API RESULTS SUMMARY ===');
@@ -201,51 +155,24 @@ export async function fetchEthereumTransactions(): Promise<Transaction[]> {
     console.log('  - Normal Results Status:', normalResults.status,
       normalResults.status === 'fulfilled' ? `(${normalResults.value.length} results)` : `(${normalResults.reason})`);
 
-    // Process ERC-20 token transfers (USDC & WETH)
+    // Process ERC-20 token transfers (USDC & WETH) - EXACT LOCAL LOGIC
     if (tokenResults.status === 'fulfilled') {
-      console.log(`🔍 Processing ${tokenResults.value.length} raw token transactions`);
-      
-      // Log first few transactions for debugging
-      if (tokenResults.value.length > 0) {
-        console.log('📋 Sample token transactions:');
-        tokenResults.value.slice(0, 3).forEach((tx, i) => {
-          console.log(`   ${i + 1}. Contract: ${tx.contractAddress}, Symbol: ${tx.tokenSymbol}, To: ${tx.to}, Value: ${tx.value}, Timestamp: ${tx.timeStamp}`);
-        });
-      }
-      
       const tokens = tokenResults.value
         .filter(tx => {
           // Filter by date
           const txTimestamp = parseInt(tx.timeStamp);
-          if (txTimestamp < START_TIMESTAMP) {
-            console.log(`   🚫 Filtered out (date): ${tx.hash} - ${new Date(txTimestamp * 1000).toISOString()}`);
-            return false;
-          }
+          if (txTimestamp < START_TIMESTAMP) return false;
           
           // Must be TO the GONDI contract
-          if (tx.to?.toLowerCase() !== GONDI_CONTRACT.toLowerCase()) {
-            console.log(`   🚫 Filtered out (to): ${tx.hash} - ${tx.to} vs ${GONDI_CONTRACT}`);
-            return false;
-          }
+          if (tx.to?.toLowerCase() !== GONDI_CONTRACT.toLowerCase()) return false;
           
           // Must have value
-          if (!tx.value || BigInt(tx.value) <= 0) {
-            console.log(`   🚫 Filtered out (value): ${tx.hash} - ${tx.value}`);
-            return false;
-          }
+          if (!tx.value || BigInt(tx.value) <= 0) return false;
           
           // Must be USDC or WETH
           const contractAddress = tx.contractAddress?.toLowerCase();
-          const isValidToken = contractAddress === USDC_CONTRACT.toLowerCase() || 
-                               contractAddress === WETH_CONTRACT.toLowerCase();
-          
-          if (!isValidToken) {
-            console.log(`   🚫 Filtered out (contract): ${tx.hash} - ${contractAddress} vs ${USDC_CONTRACT}|${WETH_CONTRACT}`);
-          } else {
-            console.log(`   ✅ Accepted token: ${tx.hash} - ${tx.tokenSymbol} (${contractAddress})`);
-          }
-          
-          return isValidToken;
+          return contractAddress === USDC_CONTRACT.toLowerCase() || 
+                 contractAddress === WETH_CONTRACT.toLowerCase();
         })
         .map(tx => ({
           hash: tx.hash,
