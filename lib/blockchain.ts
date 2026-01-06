@@ -81,18 +81,18 @@ export async function fetchEthereumTransactions(): Promise<Transaction[]> {
       throw new Error('ETHERSCAN_API_KEY is required but not set');
     }
 
-    // Build URLs with start timestamp filter (using standard API, not V2)
-    // PRODUCTION FIX: Use standard Etherscan API instead of V2 API
-    const baseParams = `&startblock=0&endblock=99999999&sort=asc&apikey=${ETHERSCAN_API_KEY}`;
+    // Build URLs with start timestamp filter (using V2 API with correct format)
+    // PRODUCTION FIX: Use V2 API but with correct parameter structure
+    const baseParams = `startblock=0&endblock=99999999&sort=asc&apikey=${ETHERSCAN_API_KEY}`;
     
-    // 1. ERC-20 Token transfers TO the contract (USDC + WETH) - FIXED: Use standard API
-    const tokenUrl = `https://api.etherscan.io/api?module=account&action=tokentx&address=${GONDI_CONTRACT}${baseParams}`;
+    // 1. ERC-20 Token transfers TO the contract (USDC + WETH) - V2 API format
+    const tokenUrl = `https://api.etherscan.io/v2/api?chainid=1&module=account&action=tokentx&address=${GONDI_CONTRACT}&${baseParams}`;
     
-    // 2. Internal ETH transactions TO the contract - FIXED: Use standard API
-    const internalUrl = `https://api.etherscan.io/api?module=account&action=txlistinternal&address=${GONDI_CONTRACT}${baseParams}`;
+    // 2. Internal ETH transactions TO the contract - V2 API format
+    const internalUrl = `https://api.etherscan.io/v2/api?chainid=1&module=account&action=txlistinternal&address=${GONDI_CONTRACT}&${baseParams}`;
     
-    // 3. Regular ETH transactions TO the contract - FIXED: Use standard API
-    const normalUrl = `https://api.etherscan.io/api?module=account&action=txlist&address=${GONDI_CONTRACT}${baseParams}`;
+    // 3. Regular ETH transactions TO the contract - V2 API format
+    const normalUrl = `https://api.etherscan.io/v2/api?chainid=1&module=account&action=txlist&address=${GONDI_CONTRACT}&${baseParams}`;
 
     // === COMPREHENSIVE DEBUGGING: Per-Currency Configuration ===
     console.log('🔍 === CURRENCY CONFIGURATION AUDIT ===');
