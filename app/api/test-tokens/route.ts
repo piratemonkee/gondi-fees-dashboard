@@ -1,5 +1,8 @@
 import { NextResponse } from 'next/server';
 
+// Force dynamic rendering
+export const dynamic = 'force-dynamic';
+
 // Test endpoint to verify token API is working in production
 export async function GET() {
   try {
@@ -9,7 +12,11 @@ export async function GET() {
     const ETHERSCAN_API_KEY = process.env.ETHERSCAN_API_KEY;
     
     if (!ETHERSCAN_API_KEY) {
-      return NextResponse.json({ error: 'API key missing' });
+      return NextResponse.json({ 
+        success: false,
+        error: 'API key missing',
+        hasApiKey: false
+      });
     }
     
     // Test the exact same URL as in blockchain.ts
@@ -28,7 +35,12 @@ export async function GET() {
         success: false,
         error: data.message,
         result: data.result,
-        debug: 'Token API failed'
+        debug: 'Token API failed',
+        apiKey: {
+          present: !!ETHERSCAN_API_KEY,
+          length: ETHERSCAN_API_KEY?.length || 0,
+          prefix: ETHERSCAN_API_KEY?.substring(0, 8) || 'N/A'
+        }
       });
     }
     
@@ -47,6 +59,11 @@ export async function GET() {
       totalTransactions: results.length,
       contracts: Array.from(contracts),
       symbols: Array.from(symbols),
+      apiKey: {
+        present: !!ETHERSCAN_API_KEY,
+        length: ETHERSCAN_API_KEY?.length || 0,
+        prefix: ETHERSCAN_API_KEY?.substring(0, 8) || 'N/A'
+      },
       sample: results.slice(0, 3).map(tx => ({
         contract: tx.contractAddress,
         symbol: tx.tokenSymbol,
@@ -54,13 +71,23 @@ export async function GET() {
         value: tx.value,
         timeStamp: tx.timeStamp
       }))
+    }, {
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
+        'Pragma': 'no-cache'
+      }
     });
     
   } catch (error) {
     console.error('🚨 Test API error:', error);
     return NextResponse.json({ 
       success: false, 
-      error: error instanceof Error ? error.message : String(error) 
+      error: error instanceof Error ? error.message : String(error),
+      debug: 'Exception thrown during API test'
+    }, {
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0'
+      }
     });
   }
 }
