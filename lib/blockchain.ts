@@ -194,22 +194,49 @@ export async function fetchEthereumTransactions(): Promise<Transaction[]> {
 
     // Process ERC-20 token transfers (USDC & WETH)
     if (tokenResults.status === 'fulfilled') {
+      console.log(`🔍 Processing ${tokenResults.value.length} raw token transactions`);
+      
+      // Log first few transactions for debugging
+      if (tokenResults.value.length > 0) {
+        console.log('📋 Sample token transactions:');
+        tokenResults.value.slice(0, 3).forEach((tx, i) => {
+          console.log(`   ${i + 1}. Contract: ${tx.contractAddress}, Symbol: ${tx.tokenSymbol}, To: ${tx.to}, Value: ${tx.value}, Timestamp: ${tx.timeStamp}`);
+        });
+      }
+      
       const tokens = tokenResults.value
         .filter(tx => {
           // Filter by date
           const txTimestamp = parseInt(tx.timeStamp);
-          if (txTimestamp < START_TIMESTAMP) return false;
+          if (txTimestamp < START_TIMESTAMP) {
+            console.log(`   🚫 Filtered out (date): ${tx.hash} - ${new Date(txTimestamp * 1000).toISOString()}`);
+            return false;
+          }
           
           // Must be TO the GONDI contract
-          if (tx.to?.toLowerCase() !== GONDI_CONTRACT.toLowerCase()) return false;
+          if (tx.to?.toLowerCase() !== GONDI_CONTRACT.toLowerCase()) {
+            console.log(`   🚫 Filtered out (to): ${tx.hash} - ${tx.to} vs ${GONDI_CONTRACT}`);
+            return false;
+          }
           
           // Must have value
-          if (!tx.value || BigInt(tx.value) <= 0) return false;
+          if (!tx.value || BigInt(tx.value) <= 0) {
+            console.log(`   🚫 Filtered out (value): ${tx.hash} - ${tx.value}`);
+            return false;
+          }
           
           // Must be USDC or WETH
           const contractAddress = tx.contractAddress?.toLowerCase();
-          return contractAddress === USDC_CONTRACT.toLowerCase() || 
-                 contractAddress === WETH_CONTRACT.toLowerCase();
+          const isValidToken = contractAddress === USDC_CONTRACT.toLowerCase() || 
+                               contractAddress === WETH_CONTRACT.toLowerCase();
+          
+          if (!isValidToken) {
+            console.log(`   🚫 Filtered out (contract): ${tx.hash} - ${contractAddress} vs ${USDC_CONTRACT}|${WETH_CONTRACT}`);
+          } else {
+            console.log(`   ✅ Accepted token: ${tx.hash} - ${tx.tokenSymbol} (${contractAddress})`);
+          }
+          
+          return isValidToken;
         })
         .map(tx => ({
           hash: tx.hash,
