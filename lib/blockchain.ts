@@ -62,8 +62,8 @@ async function fetchWithRetry(url: string, retries: number = 3): Promise<any[]> 
         throw error;
       }
       
-      // Wait before retry
-      await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1)));
+      // Wait before retry - longer delays for production stability
+      await new Promise(resolve => setTimeout(resolve, 2000 * (i + 1)));
     }
   }
   return [];
@@ -139,44 +139,48 @@ export async function fetchEthereumTransactions(): Promise<Transaction[]> {
     
     // Add timing and detailed execution tracking
     const callStartTime = Date.now();
-    const [tokenResults, internalResults, normalResults] = await Promise.allSettled([
-      (async () => {
-        const start = Date.now();
-        console.log('⏱️  STARTING Token API call (USDC/WETH)');
-        try {
-          const result = await fetchWithRetry(tokenUrl);
-          console.log(`⏱️  COMPLETED Token API call in ${Date.now() - start}ms - Got ${result.length} results`);
-          return result;
-        } catch (error) {
-          console.log(`⏱️  FAILED Token API call in ${Date.now() - start}ms - Error:`, error);
-          throw error;
-        }
-      })(),
-      (async () => {
-        const start = Date.now();
-        console.log('⏱️  STARTING Internal ETH API call');
-        try {
-          const result = await fetchWithRetry(internalUrl);
-          console.log(`⏱️  COMPLETED Internal ETH API call in ${Date.now() - start}ms - Got ${result.length} results`);
-          return result;
-        } catch (error) {
-          console.log(`⏱️  FAILED Internal ETH API call in ${Date.now() - start}ms - Error:`, error);
-          throw error;
-        }
-      })(),
-      (async () => {
-        const start = Date.now();
-        console.log('⏱️  STARTING Normal ETH API call');
-        try {
-          const result = await fetchWithRetry(normalUrl);
-          console.log(`⏱️  COMPLETED Normal ETH API call in ${Date.now() - start}ms - Got ${result.length} results`);
-          return result;
-        } catch (error) {
-          console.log(`⏱️  FAILED Normal ETH API call in ${Date.now() - start}ms - Error:`, error);
-          throw error;
-        }
-      })()
-    ]);
+    
+    // PRODUCTION FIX: Use sequential calls instead of Promise.allSettled to avoid timeout issues
+    // This ensures token transactions (USDC/WETH) are processed properly in production
+    let tokenResults: PromiseSettledResult<any[]>;
+    let internalResults: PromiseSettledResult<any[]>;
+    let normalResults: PromiseSettledResult<any[]>;
+    
+    try {
+      // First: Fetch token transactions (USDC/WETH) - this is the critical failing call
+      console.log('⏱️  STARTING Token API call (USDC/WETH) - SEQUENTIAL MODE');
+      const tokenStart = Date.now();
+      const tokenData = await fetchWithRetry(tokenUrl);
+      tokenResults = { status: 'fulfilled', value: tokenData } as PromiseFulfilledResult<any[]>;
+      console.log(`⏱️  COMPLETED Token API call in ${Date.now() - tokenStart}ms - Got ${tokenData.length} results`);
+    } catch (error) {
+      console.log(`⏱️  FAILED Token API call - Error:`, error);
+      tokenResults = { status: 'rejected', reason: error } as PromiseRejectedResult;
+    }
+    
+    try {
+      // Second: Fetch internal ETH transactions
+      console.log('⏱️  STARTING Internal ETH API call - SEQUENTIAL MODE');
+      const internalStart = Date.now();
+      const internalData = await fetchWithRetry(internalUrl);
+      internalResults = { status: 'fulfilled', value: internalData } as PromiseFulfilledResult<any[]>;
+      console.log(`⏱️  COMPLETED Internal ETH API call in ${Date.now() - internalStart}ms - Got ${internalData.length} results`);
+    } catch (error) {
+      console.log(`⏱️  FAILED Internal ETH API call - Error:`, error);
+      internalResults = { status: 'rejected', reason: error } as PromiseRejectedResult;
+    }
+    
+    try {
+      // Third: Fetch normal ETH transactions
+      console.log('⏱️  STARTING Normal ETH API call - SEQUENTIAL MODE');
+      const normalStart = Date.now();
+      const normalData = await fetchWithRetry(normalUrl);
+      normalResults = { status: 'fulfilled', value: normalData } as PromiseFulfilledResult<any[]>;
+      console.log(`⏱️  COMPLETED Normal ETH API call in ${Date.now() - normalStart}ms - Got ${normalData.length} results`);
+    } catch (error) {
+      console.log(`⏱️  FAILED Normal ETH API call - Error:`, error);
+      normalResults = { status: 'rejected', reason: error } as PromiseRejectedResult;
+    }
     
     console.log(`⏱️  ALL API CALLS COMPLETED in ${Date.now() - callStartTime}ms`);
     console.log('📊 === DETAILED API RESULTS SUMMARY ===');
