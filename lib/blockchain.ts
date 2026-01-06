@@ -2,7 +2,7 @@ import { Transaction } from './types';
 
 // Contract addresses
 const GONDI_CONTRACT = '0x4169447a424ec645f8a24dccfd8328f714dd5562';
-const USDC_CONTRACT = '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48';
+const USDC_CONTRACT = '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'; // Fixed: Correct USDC contract address
 const WETH_CONTRACT = '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2';
 
 // Start date: October 22, 2025
@@ -154,6 +154,15 @@ export async function fetchEthereumTransactions(): Promise<Transaction[]> {
       const tokenData = await fetchWithRetry(tokenUrl);
       tokenResults = { status: 'fulfilled', value: tokenData } as PromiseFulfilledResult<any[]>;
       console.log(`⏱️  COMPLETED Token API call in ${Date.now() - tokenStart}ms - Got ${tokenData.length} results`);
+      
+      // CRITICAL: Log contract addresses and symbols in the response
+      if (tokenData.length > 0) {
+        const contracts = new Set(tokenData.map(tx => tx.contractAddress?.toLowerCase()));
+        const symbols = new Set(tokenData.map(tx => tx.tokenSymbol));
+        console.log(`📊 Token contracts in response: [${Array.from(contracts).join(', ')}]`);
+        console.log(`📊 Token symbols in response: [${Array.from(symbols).join(', ')}]`);
+        console.log(`📊 Expected contracts: [${USDC_CONTRACT.toLowerCase()}, ${WETH_CONTRACT.toLowerCase()}]`);
+      }
     } catch (error) {
       console.log(`⏱️  FAILED Token API call - Error:`, error);
       tokenResults = { status: 'rejected', reason: error } as PromiseRejectedResult;
