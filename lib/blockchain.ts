@@ -146,7 +146,41 @@ export async function fetchEthereumTransactions(): Promise<Transaction[]> {
     } else {
       console.error('❌ Token transactions (USDC/WETH) failed!');
       console.error('   Reason:', tokenResults.reason);
+      console.error('   Error details:', JSON.stringify(tokenResults, null, 2));
       console.error('   This means USDC and WETH revenue will be missing!');
+      console.error('   🔍 Debug: Token URL was:', tokenUrl);
+      
+      // Try a direct retry for token transactions
+      console.log('🔄 Attempting direct retry for token transactions...');
+      try {
+        const retryTokens = await fetchWithRetry(tokenUrl);
+        const retryProcessed = retryTokens
+          .filter(tx => {
+            const txTimestamp = parseInt(tx.timeStamp);
+            if (txTimestamp < START_TIMESTAMP) return false;
+            if (tx.to?.toLowerCase() !== GONDI_CONTRACT.toLowerCase()) return false;
+            if (!tx.value || BigInt(tx.value) <= 0) return false;
+            const contractAddress = tx.contractAddress?.toLowerCase();
+            return contractAddress === USDC_CONTRACT.toLowerCase() || 
+                   contractAddress === WETH_CONTRACT.toLowerCase();
+          })
+          .map(tx => ({
+            hash: tx.hash,
+            timestamp: parseInt(tx.timeStamp) * 1000,
+            value: tx.value,
+            tokenSymbol: tx.tokenSymbol === 'WETHEREUM' ? 'WETH' : tx.tokenSymbol,
+            tokenDecimal: parseInt(tx.tokenDecimal || '18'),
+            from: tx.from,
+            to: tx.to,
+            network: 'ethereum' as const,
+            blockNumber: parseInt(tx.blockNumber),
+          }));
+        
+        transactions.push(...retryProcessed);
+        console.log(`✅ Retry successful! Processed ${retryProcessed.length} ERC-20 token transactions`);
+      } catch (retryError) {
+        console.error('❌ Retry also failed:', retryError);
+      }
     }
 
     // Process internal ETH transactions
