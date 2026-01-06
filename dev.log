@@ -27284,3 +27284,41 @@ Failed to set fetch cache https://api.etherscan.io/v2/api?chainid=1&module=accou
  GET /api/fees 200 in 1982ms
  ✓ Compiled in 192ms (801 modules)
  ✓ Compiled in 198ms (1643 modules)
+ ✓ Compiled /api/test-tokens in 158ms (814 modules)
+🧪 Testing token API directly...
+🔗 Testing URL: https://api.etherscan.io/v2/api?chainid=1&module=account&action=tokentx&address=0x4169447a424ec645f8a24dccfd8328f714dd55...
+Failed to set fetch cache https://api.etherscan.io/v2/api?chainid=1&module=account&action=tokentx&address=0x4169447a424ec645f8a24dccfd8328f714dd5562&startblock=0&endblock=99999999&sort=asc&apikey=54W3B1IFY9JNU55IGIBU1VUIFTJ7F7D619 Error: Failed to set Next.js data cache, items over 2MB can not be cached (8142693 bytes)
+    at IncrementalCache.set (/Users/guimar/gondifees/node_modules/next/dist/server/lib/incremental-cache/index.js:388:23)
+    at /Users/guimar/gondifees/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:54468
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async GET (webpack-internal:///(rsc)/./app/api/test-tokens/route.ts:21:26)
+    at async /Users/guimar/gondifees/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:57228
+    at async eT.execute (/Users/guimar/gondifees/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:46851)
+    at async eT.handle (/Users/guimar/gondifees/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:58760)
+    at async doRender (/Users/guimar/gondifees/node_modules/next/dist/server/base-server.js:1366:42)
+    at async cacheEntry.responseCache.get.routeKind (/Users/guimar/gondifees/node_modules/next/dist/server/base-server.js:1588:28)
+    at async DevServer.renderToResponseWithComponentsImpl (/Users/guimar/gondifees/node_modules/next/dist/server/base-server.js:1496:28)
+    at async DevServer.renderPageComponent (/Users/guimar/gondifees/node_modules/next/dist/server/base-server.js:1924:24)
+    at async DevServer.renderToResponseImpl (/Users/guimar/gondifees/node_modules/next/dist/server/base-server.js:1962:32)
+    at async DevServer.pipeImpl (/Users/guimar/gondifees/node_modules/next/dist/server/base-server.js:922:25)
+    at async NextNodeServer.handleCatchallRenderRequest (/Users/guimar/gondifees/node_modules/next/dist/server/next-server.js:272:17)
+    at async DevServer.handleRequestImpl (/Users/guimar/gondifees/node_modules/next/dist/server/base-server.js:818:17)
+    at async /Users/guimar/gondifees/node_modules/next/dist/server/dev/next-dev-server.js:339:20
+    at async Span.traceAsyncFn (/Users/guimar/gondifees/node_modules/next/dist/trace/trace.js:154:20)
+    at async DevServer.handleRequest (/Users/guimar/gondifees/node_modules/next/dist/server/dev/next-dev-server.js:336:24)
+    at async invokeRender (/Users/guimar/gondifees/node_modules/next/dist/server/lib/router-server.js:179:21)
+    at async handleRequest (/Users/guimar/gondifees/node_modules/next/dist/server/lib/router-server.js:359:24)
+    at async requestHandlerImpl (/Users/guimar/gondifees/node_modules/next/dist/server/lib/router-server.js:383:13)
+    at async Server.requestListener (/Users/guimar/gondifees/node_modules/next/dist/server/lib/start-server.js:141:13)
+📊 Raw API Response Status: 1
+📊 Raw API Response Message: OK
+📊 Token transactions count: 8991
+📊 Contracts found: [
+  '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',
+  '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
+  '0x3cd76a48cfba30be274e6bcbdb571fef41ec6376'
+]
+📊 Symbols found: [ 'WETH', 'USDC', 'Visit website yield-usd .net to claim rewards' ]
+ GET /api/test-tokens 200 in 1668ms
+ ✓ Compiled in 296ms (1615 modules)
+ ✓ Compiled in 83ms (801 modules)
