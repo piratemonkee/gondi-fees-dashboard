@@ -8,10 +8,44 @@ export const dynamic = 'force-dynamic';
 export async function GET(request: Request) {
   try {
     console.log('🚀 Starting GONDI fee data fetch...');
-    console.log('🌍 Environment Info:');
-    console.log('   - ETHERSCAN_API_KEY present:', !!process.env.ETHERSCAN_API_KEY);
-    console.log('   - NODE_ENV:', process.env.NODE_ENV);
-    console.log('   - VERCEL:', process.env.VERCEL);
+    
+    // === COMPREHENSIVE ENVIRONMENT VARIABLE AUDIT ===
+    console.log('🌍 === ENVIRONMENT VARIABLE DEEP INSPECTION ===');
+    const envVars = {
+      ETHERSCAN_API_KEY: process.env.ETHERSCAN_API_KEY,
+      NODE_ENV: process.env.NODE_ENV,
+      VERCEL: process.env.VERCEL,
+      VERCEL_ENV: process.env.VERCEL_ENV,
+      NEXT_RUNTIME: process.env.NEXT_RUNTIME
+    };
+    
+    Object.entries(envVars).forEach(([key, value]) => {
+      if (key === 'ETHERSCAN_API_KEY') {
+        console.log(`   - ${key}: ${value ? `[PRESENT - ${value.length} chars, starts with "${value.substring(0, 8)}..."]` : '[MISSING]'}`);
+      } else {
+        console.log(`   - ${key}: ${value || '[MISSING]'}`);
+      }
+    });
+    
+    // Check for common environment issues
+    console.log('🔍 === ENVIRONMENT VALIDATION ===');
+    const validations = [];
+    
+    if (!process.env.ETHERSCAN_API_KEY) {
+      validations.push('❌ CRITICAL: ETHERSCAN_API_KEY is missing');
+    } else if (process.env.ETHERSCAN_API_KEY.length < 20) {
+      validations.push('⚠️  WARNING: ETHERSCAN_API_KEY seems too short');
+    } else {
+      validations.push('✅ ETHERSCAN_API_KEY is present and properly formatted');
+    }
+    
+    if (process.env.VERCEL === '1') {
+      validations.push('📦 Running in Vercel production environment');
+    } else {
+      validations.push('💻 Running in local/development environment');
+    }
+    
+    validations.forEach(validation => console.log(`   ${validation}`));
     
     // Fetch Ethereum transactions (USDC, WETH, ETH)
     const transactions = await fetchEthereumTransactions();

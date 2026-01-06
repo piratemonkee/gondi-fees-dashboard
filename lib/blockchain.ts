@@ -93,22 +93,99 @@ export async function fetchEthereumTransactions(): Promise<Transaction[]> {
     // 3. Regular ETH transactions TO the contract
     const normalUrl = `https://api.etherscan.io/v2/api?chainid=1&module=account&action=txlist&address=${GONDI_CONTRACT}${baseParams}`;
 
-    console.log('🔗 Starting parallel API calls...');
-    console.log('📍 Token URL:', tokenUrl);
-    console.log('📍 Internal URL:', internalUrl);
-    console.log('📍 Normal URL:', normalUrl);
+    // === COMPREHENSIVE DEBUGGING: Per-Currency Configuration ===
+    console.log('🔍 === CURRENCY CONFIGURATION AUDIT ===');
+    const currencyConfigs = [
+      {
+        name: 'ERC20_TOKENS_USDC_WETH',
+        chainId: 1,
+        contractAddress: GONDI_CONTRACT,
+        tokenContracts: [USDC_CONTRACT, WETH_CONTRACT],
+        startTimestamp: START_TIMESTAMP,
+        url: tokenUrl,
+        expectedCurrencies: ['USDC', 'WETH']
+      },
+      {
+        name: 'INTERNAL_ETH',
+        chainId: 1, 
+        contractAddress: GONDI_CONTRACT,
+        tokenContracts: [],
+        startTimestamp: START_TIMESTAMP,
+        url: internalUrl,
+        expectedCurrencies: ['ETH']
+      },
+      {
+        name: 'NORMAL_ETH',
+        chainId: 1,
+        contractAddress: GONDI_CONTRACT, 
+        tokenContracts: [],
+        startTimestamp: START_TIMESTAMP,
+        url: normalUrl,
+        expectedCurrencies: ['ETH']
+      }
+    ];
     
-    // Fetch all three types in parallel
+    currencyConfigs.forEach((config, index) => {
+      console.log(`📋 Config ${index + 1}: ${config.name}`);
+      console.log(`   - ChainId: ${config.chainId}`);
+      console.log(`   - Contract: ${config.contractAddress}`);
+      console.log(`   - Token Contracts: [${config.tokenContracts.join(', ')}]`);
+      console.log(`   - Start Timestamp: ${config.startTimestamp} (${new Date(config.startTimestamp * 1000).toISOString()})`);
+      console.log(`   - Expected Currencies: [${config.expectedCurrencies.join(', ')}]`);
+      console.log(`   - URL (masked): ${config.url.substring(0, 80)}...`);
+    });
+    
+    console.log('🔗 Starting parallel API calls...');
+    
+    // Add timing and detailed execution tracking
+    const callStartTime = Date.now();
     const [tokenResults, internalResults, normalResults] = await Promise.allSettled([
-      fetchWithRetry(tokenUrl),
-      fetchWithRetry(internalUrl),
-      fetchWithRetry(normalUrl)
+      (async () => {
+        const start = Date.now();
+        console.log('⏱️  STARTING Token API call (USDC/WETH)');
+        try {
+          const result = await fetchWithRetry(tokenUrl);
+          console.log(`⏱️  COMPLETED Token API call in ${Date.now() - start}ms - Got ${result.length} results`);
+          return result;
+        } catch (error) {
+          console.log(`⏱️  FAILED Token API call in ${Date.now() - start}ms - Error:`, error);
+          throw error;
+        }
+      })(),
+      (async () => {
+        const start = Date.now();
+        console.log('⏱️  STARTING Internal ETH API call');
+        try {
+          const result = await fetchWithRetry(internalUrl);
+          console.log(`⏱️  COMPLETED Internal ETH API call in ${Date.now() - start}ms - Got ${result.length} results`);
+          return result;
+        } catch (error) {
+          console.log(`⏱️  FAILED Internal ETH API call in ${Date.now() - start}ms - Error:`, error);
+          throw error;
+        }
+      })(),
+      (async () => {
+        const start = Date.now();
+        console.log('⏱️  STARTING Normal ETH API call');
+        try {
+          const result = await fetchWithRetry(normalUrl);
+          console.log(`⏱️  COMPLETED Normal ETH API call in ${Date.now() - start}ms - Got ${result.length} results`);
+          return result;
+        } catch (error) {
+          console.log(`⏱️  FAILED Normal ETH API call in ${Date.now() - start}ms - Error:`, error);
+          throw error;
+        }
+      })()
     ]);
     
-    console.log('📊 API Results Summary:');
-    console.log('  - Token Results Status:', tokenResults.status);
-    console.log('  - Internal Results Status:', internalResults.status);
-    console.log('  - Normal Results Status:', normalResults.status);
+    console.log(`⏱️  ALL API CALLS COMPLETED in ${Date.now() - callStartTime}ms`);
+    console.log('📊 === DETAILED API RESULTS SUMMARY ===');
+    console.log('  - Token Results Status:', tokenResults.status, 
+      tokenResults.status === 'fulfilled' ? `(${tokenResults.value.length} results)` : `(${tokenResults.reason})`);
+    console.log('  - Internal Results Status:', internalResults.status,
+      internalResults.status === 'fulfilled' ? `(${internalResults.value.length} results)` : `(${internalResults.reason})`);
+    console.log('  - Normal Results Status:', normalResults.status,
+      normalResults.status === 'fulfilled' ? `(${normalResults.value.length} results)` : `(${normalResults.reason})`);
 
     // Process ERC-20 token transfers (USDC & WETH)
     if (tokenResults.status === 'fulfilled') {
