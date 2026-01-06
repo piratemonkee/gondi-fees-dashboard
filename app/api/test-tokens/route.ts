@@ -48,8 +48,8 @@ export async function GET() {
     console.log(`📊 Token transactions count: ${results.length}`);
     
     // Log token contracts in response
-    const contracts = new Set(results.map(tx => tx.contractAddress?.toLowerCase()));
-    const symbols = new Set(results.map(tx => tx.tokenSymbol));
+    const contracts = new Set(results.map((tx: any) => tx.contractAddress?.toLowerCase()));
+    const symbols = new Set(results.map((tx: any) => tx.tokenSymbol));
     
     console.log('📊 Contracts found:', Array.from(contracts));
     console.log('📊 Symbols found:', Array.from(symbols));
@@ -64,7 +64,7 @@ export async function GET() {
         length: ETHERSCAN_API_KEY?.length || 0,
         prefix: ETHERSCAN_API_KEY?.substring(0, 8) || 'N/A'
       },
-      sample: results.slice(0, 3).map(tx => ({
+      sample: results.slice(0, 3).map((tx: any) => ({
         contract: tx.contractAddress,
         symbol: tx.tokenSymbol,
         to: tx.to,

@@ -27360,3 +27360,78 @@ Failed to set fetch cache https://api.etherscan.io/v2/api?chainid=1&module=accou
 📊 Symbols found: [ 'WETH', 'USDC', 'Visit website yield-usd .net to claim rewards' ]
  GET /api/test-tokens 200 in 4125ms
  ✓ Compiled in 243ms (801 modules)
+ ✓ Compiled in 277ms (1585 modules)
+ ⨯ Error: Cannot find module './276.js'
+Require stack:
+- /Users/guimar/gondifees/.next/server/webpack-runtime.js
+- /Users/guimar/gondifees/.next/server/app/page.js
+- /Users/guimar/gondifees/node_modules/next/dist/server/require.js
+- /Users/guimar/gondifees/node_modules/next/dist/server/load-components.js
+- /Users/guimar/gondifees/node_modules/next/dist/build/utils.js
+- /Users/guimar/gondifees/node_modules/next/dist/server/dev/hot-middleware.js
+- /Users/guimar/gondifees/node_modules/next/dist/server/dev/hot-reloader-webpack.js
+- /Users/guimar/gondifees/node_modules/next/dist/server/lib/router-utils/setup-dev-bundler.js
+- /Users/guimar/gondifees/node_modules/next/dist/server/lib/router-server.js
+- /Users/guimar/gondifees/node_modules/next/dist/server/lib/start-server.js
+    at Module._resolveFilename (node:internal/modules/cjs/loader:1077:15)
+    at /Users/guimar/gondifees/node_modules/next/dist/server/require-hook.js:55:36
+    at Module._load (node:internal/modules/cjs/loader:922:27)
+    at Module.require (node:internal/modules/cjs/loader:1143:19)
+    at mod.require (/Users/guimar/gondifees/node_modules/next/dist/server/require-hook.js:65:28)
+    at require (node:internal/modules/cjs/helpers:110:18)
+    at __webpack_require__.f.require (/Users/guimar/gondifees/.next/server/webpack-runtime.js:198:28)
+    at /Users/guimar/gondifees/.next/server/webpack-runtime.js:111:40
+    at Array.reduce (<anonymous>)
+    at __webpack_require__.e (/Users/guimar/gondifees/.next/server/webpack-runtime.js:110:67)
+    at Array.map (<anonymous>)
+    at __webpack_require__.X (/Users/guimar/gondifees/.next/server/webpack-runtime.js:162:22)
+    at /Users/guimar/gondifees/.next/server/app/page.js:1:435489
+    at Object.<anonymous> (/Users/guimar/gondifees/.next/server/app/page.js:1:435534)
+    at Module._compile (node:internal/modules/cjs/loader:1256:14)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1310:10)
+    at Module.load (node:internal/modules/cjs/loader:1119:32)
+    at Module._load (node:internal/modules/cjs/loader:960:12)
+    at Module.require (node:internal/modules/cjs/loader:1143:19)
+    at mod.require (/Users/guimar/gondifees/node_modules/next/dist/server/require-hook.js:65:28)
+    at require (node:internal/modules/cjs/helpers:110:18)
+    at requirePage (/Users/guimar/gondifees/node_modules/next/dist/server/require.js:109:84)
+    at /Users/guimar/gondifees/node_modules/next/dist/server/load-components.js:103:84
+    at async loadComponentsImpl (/Users/guimar/gondifees/node_modules/next/dist/server/load-components.js:103:26)
+    at async DevServer.findPageComponentsImpl (/Users/guimar/gondifees/node_modules/next/dist/server/next-server.js:714:36)
+    at async DevServer.findPageComponents (/Users/guimar/gondifees/node_modules/next/dist/server/dev/next-dev-server.js:577:20)
+    at async DevServer.renderPageComponent (/Users/guimar/gondifees/node_modules/next/dist/server/base-server.js:1910:24)
+    at async DevServer.renderToResponseImpl (/Users/guimar/gondifees/node_modules/next/dist/server/base-server.js:1962:32)
+    at async DevServer.pipeImpl (/Users/guimar/gondifees/node_modules/next/dist/server/base-server.js:922:25)
+    at async NextNodeServer.handleCatchallRenderRequest (/Users/guimar/gondifees/node_modules/next/dist/server/next-server.js:272:17)
+    at async DevServer.handleRequestImpl (/Users/guimar/gondifees/node_modules/next/dist/server/base-server.js:818:17)
+    at async /Users/guimar/gondifees/node_modules/next/dist/server/dev/next-dev-server.js:339:20
+    at async Span.traceAsyncFn (/Users/guimar/gondifees/node_modules/next/dist/trace/trace.js:154:20)
+    at async DevServer.handleRequest (/Users/guimar/gondifees/node_modules/next/dist/server/dev/next-dev-server.js:336:24)
+    at async invokeRender (/Users/guimar/gondifees/node_modules/next/dist/server/lib/router-server.js:179:21)
+    at async handleRequest (/Users/guimar/gondifees/node_modules/next/dist/server/lib/router-server.js:359:24)
+    at async requestHandlerImpl (/Users/guimar/gondifees/node_modules/next/dist/server/lib/router-server.js:383:13)
+    at async Server.requestListener (/Users/guimar/gondifees/node_modules/next/dist/server/lib/start-server.js:141:13) {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [
+    '/Users/guimar/gondifees/.next/server/webpack-runtime.js',
+    '/Users/guimar/gondifees/.next/server/app/page.js',
+    '/Users/guimar/gondifees/node_modules/next/dist/server/require.js',
+    '/Users/guimar/gondifees/node_modules/next/dist/server/load-components.js',
+    '/Users/guimar/gondifees/node_modules/next/dist/build/utils.js',
+    '/Users/guimar/gondifees/node_modules/next/dist/server/dev/hot-middleware.js',
+    '/Users/guimar/gondifees/node_modules/next/dist/server/dev/hot-reloader-webpack.js',
+    '/Users/guimar/gondifees/node_modules/next/dist/server/lib/router-utils/setup-dev-bundler.js',
+    '/Users/guimar/gondifees/node_modules/next/dist/server/lib/router-server.js',
+    '/Users/guimar/gondifees/node_modules/next/dist/server/lib/start-server.js'
+  ],
+  page: '/'
+}
+ ○ Compiling /_error ...
+ ✓ Compiled /_error in 757ms (1798 modules)
+ GET / 200 in 101ms
+ ✓ Compiled /_not-found in 491ms (1801 modules)
+ GET /_next/static/css/app/layout.css?v=1767743120423 404 in 562ms
+ GET /_next/static/chunks/main-app.js?v=1767743120423 404 in 455ms
+ GET /_next/static/chunks/app-pages-internals.js 404 in 455ms
+ GET /_next/static/chunks/app/page.js 404 in 12ms
+ ✓ Compiled in 94ms (989 modules)
