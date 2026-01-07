@@ -17,6 +17,7 @@ function setCachedData(url: string, data: any) {
   API_CACHE.set(url, { data, timestamp: Date.now() });
 }
 
+
 // Contract addresses
 const GONDI_CONTRACT = '0x4169447a424ec645f8a24dccfd8328f714dd5562';
 const USDC_CONTRACT = '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'; // Fixed: Correct USDC contract address
@@ -110,45 +111,123 @@ export async function fetchEthereumTransactions(): Promise<Transaction[]> {
       throw new Error('ETHERSCAN_API_KEY is required but not set');
     }
 
-    // RATE LIMIT FIX: Use V2 API with proper rate limiting
+    // UNIFIED API APPROACH: Use V2 API to get ALL transactions to the GONDI contract
     const baseParams = `startblock=0&endblock=99999999&sort=asc&apikey=${ETHERSCAN_API_KEY}`;
     
-    // 1. ERC-20 Token transfers TO the contract (USDC + WETH) - V2 API
+    // Let's try to get ALL transactions using different approaches and see what works
+    // 1. Normal transactions (might include ETH transfers)
+    const normalUrl = `https://api.etherscan.io/v2/api?chainid=1&module=account&action=txlist&address=${GONDI_CONTRACT}&${baseParams}`;
+    
+    // 2. ERC-20 Token transfers (USDC + WETH)
     const tokenUrl = `https://api.etherscan.io/v2/api?chainid=1&module=account&action=tokentx&address=${GONDI_CONTRACT}&${baseParams}`;
     
-    // 2. Internal ETH transactions TO the contract - V2 API
+    // 3. Internal ETH transactions
     const internalUrl = `https://api.etherscan.io/v2/api?chainid=1&module=account&action=txlistinternal&address=${GONDI_CONTRACT}&${baseParams}`;
 
-    // Rate limiting info
-    console.log('🔍 API Configuration (Rate Limit Safe):');
+    // ROOT CAUSE INVESTIGATION: Test all three API endpoints
+    console.log('🔍 === ROOT CAUSE INVESTIGATION ===');
+    console.log('🔍 Testing ALL transaction endpoints to find the correct approach:');
+    console.log(`   - Normal API: ${normalUrl.substring(0, 80)}...`);
     console.log(`   - Token API: ${tokenUrl.substring(0, 80)}...`);
     console.log(`   - Internal API: ${internalUrl.substring(0, 80)}...`);
-    console.log(`   - Using delays between calls to prevent rate limiting`);
     
-    console.log('🔗 Starting sequential API calls with rate limiting...');
+    console.log('🔗 Starting comprehensive API test (sequential to avoid rate limits)...');
     
-    // RATE LIMIT FIX: Sequential calls with delays to prevent rate limiting
     const callStartTime = Date.now();
     
-    // Call 1: Token transactions (most important)
-    console.log('🔗 Calling token API...');
-    const tokenResults = await Promise.allSettled([fetchWithRetry(tokenUrl)]).then(r => r[0]);
-    
-    // Wait 1 second between calls to avoid rate limiting
+    // Call 1: Normal transactions (might catch direct ETH transfers)
+    console.log('🔗 Testing normal transactions API...');
+    const normalResults = await Promise.allSettled([fetchWithRetry(normalUrl)]).then(r => r[0]);
     await new Promise(resolve => setTimeout(resolve, 1000));
     
-    // Call 2: Internal ETH transactions  
-    console.log('🔗 Calling internal ETH API...');
+    // Call 2: Token transactions (USDC/WETH)
+    console.log('🔗 Testing token transactions API...');
+    const tokenResults = await Promise.allSettled([fetchWithRetry(tokenUrl)]).then(r => r[0]);
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    // Call 3: Internal ETH transactions  
+    console.log('🔗 Testing internal ETH transactions API...');
     const internalResults = await Promise.allSettled([fetchWithRetry(internalUrl)]).then(r => r[0]);
     
-    console.log(`⏱️  ALL API CALLS COMPLETED in ${Date.now() - callStartTime}ms`);
-    console.log('📊 === API RESULTS SUMMARY (Rate Limited Safe) ===');
+    console.log(`⏱️  ALL API TESTS COMPLETED in ${Date.now() - callStartTime}ms`);
+    console.log('📊 === COMPREHENSIVE API RESULTS ANALYSIS ===');
+    console.log('  - Normal Results Status:', normalResults.status, 
+      normalResults.status === 'fulfilled' ? `(${normalResults.value.length} results)` : `(${normalResults.reason})`);
     console.log('  - Token Results Status:', tokenResults.status, 
       tokenResults.status === 'fulfilled' ? `(${tokenResults.value.length} results)` : `(${tokenResults.reason})`);
     console.log('  - Internal Results Status:', internalResults.status,
       internalResults.status === 'fulfilled' ? `(${internalResults.value.length} results)` : `(${internalResults.reason})`);
+    
+    // CRITICAL: Let's analyze what data each endpoint actually returns
+    if (normalResults.status === 'fulfilled' && normalResults.value.length > 0) {
+      const sample = normalResults.value[0];
+      console.log('📋 Normal API sample transaction:', {
+        hash: sample.hash,
+        value: sample.value,
+        to: sample.to,
+        from: sample.from,
+        timeStamp: sample.timeStamp
+      });
+    }
+    
+    if (tokenResults.status === 'fulfilled' && tokenResults.value.length > 0) {
+      const sample = tokenResults.value[0];
+      console.log('📋 Token API sample transaction:', {
+        hash: sample.hash,
+        value: sample.value,
+        tokenSymbol: sample.tokenSymbol,
+        contractAddress: sample.contractAddress,
+        to: sample.to,
+        timeStamp: sample.timeStamp
+      });
+    }
+    
+    if (internalResults.status === 'fulfilled' && internalResults.value.length > 0) {
+      const sample = internalResults.value[0];
+      console.log('📋 Internal API sample transaction:', {
+        hash: sample.hash,
+        value: sample.value,
+        to: sample.to,
+        from: sample.from,
+        timeStamp: sample.timeStamp
+      });
+    }
 
-    // Process ERC-20 token transfers (USDC & WETH) - EXACT LOCAL LOGIC
+    // === PROCESS ALL TRANSACTION TYPES ===
+    
+    // 1. Process Normal ETH transactions (might capture direct transfers)
+    if (normalResults.status === 'fulfilled') {
+      const normalETH = normalResults.value
+        .filter(tx => {
+          // Filter by date
+          const txTimestamp = parseInt(tx.timeStamp);
+          if (txTimestamp < START_TIMESTAMP) return false;
+          
+          // Must be TO the GONDI contract
+          if (tx.to?.toLowerCase() !== GONDI_CONTRACT.toLowerCase()) return false;
+          
+          // Must have ETH value
+          return tx.value && BigInt(tx.value) > 0;
+        })
+        .map(tx => ({
+          hash: tx.hash,
+          timestamp: parseInt(tx.timeStamp) * 1000,
+          value: tx.value,
+          tokenSymbol: 'ETH',
+          tokenDecimal: 18,
+          from: tx.from,
+          to: tx.to,
+          network: 'ethereum' as const,
+          blockNumber: parseInt(tx.blockNumber || '0'),
+        }));
+
+      transactions.push(...normalETH);
+      console.log(`✅ Processed ${normalETH.length} normal ETH transactions`);
+    } else {
+      console.error('❌ Normal ETH transactions failed:', normalResults.reason);
+    }
+
+    // 2. Process ERC-20 token transfers (USDC & WETH)
     if (tokenResults.status === 'fulfilled') {
       const tokens = tokenResults.value
         .filter(tx => {
@@ -182,46 +261,11 @@ export async function fetchEthereumTransactions(): Promise<Transaction[]> {
       transactions.push(...tokens);
       console.log(`✅ Processed ${tokens.length} ERC-20 token transactions (USDC/WETH)`);
     } else {
-      console.error('❌ Token transactions (USDC/WETH) failed!');
-      console.error('   Reason:', tokenResults.reason);
-      console.error('   Error details:', JSON.stringify(tokenResults, null, 2));
+      console.error('❌ Token transactions (USDC/WETH) failed:', tokenResults.reason);
       console.error('   This means USDC and WETH revenue will be missing!');
-      console.error('   🔍 Debug: Token URL was:', tokenUrl);
-      
-      // Try a direct retry for token transactions
-      console.log('🔄 Attempting direct retry for token transactions...');
-      try {
-        const retryTokens = await fetchWithRetry(tokenUrl);
-        const retryProcessed = retryTokens
-          .filter(tx => {
-            const txTimestamp = parseInt(tx.timeStamp);
-            if (txTimestamp < START_TIMESTAMP) return false;
-            if (tx.to?.toLowerCase() !== GONDI_CONTRACT.toLowerCase()) return false;
-            if (!tx.value || BigInt(tx.value) <= 0) return false;
-            const contractAddress = tx.contractAddress?.toLowerCase();
-            return contractAddress === USDC_CONTRACT.toLowerCase() || 
-                   contractAddress === WETH_CONTRACT.toLowerCase();
-          })
-          .map(tx => ({
-            hash: tx.hash,
-            timestamp: parseInt(tx.timeStamp) * 1000,
-            value: tx.value,
-            tokenSymbol: tx.tokenSymbol === 'WETHEREUM' ? 'WETH' : tx.tokenSymbol,
-            tokenDecimal: parseInt(tx.tokenDecimal || '18'),
-            from: tx.from,
-            to: tx.to,
-            network: 'ethereum' as const,
-            blockNumber: parseInt(tx.blockNumber),
-          }));
-        
-        transactions.push(...retryProcessed);
-        console.log(`✅ Retry successful! Processed ${retryProcessed.length} ERC-20 token transactions`);
-      } catch (retryError) {
-        console.error('❌ Retry also failed:', retryError);
-      }
     }
 
-    // Process internal ETH transactions
+    // 3. Process internal ETH transactions (additional ETH transfers)
     if (internalResults.status === 'fulfilled') {
       const ethInternal = internalResults.value
         .filter(tx => {
@@ -252,8 +296,6 @@ export async function fetchEthereumTransactions(): Promise<Transaction[]> {
     } else {
       console.error('❌ Internal ETH transactions failed:', internalResults.reason);
     }
-
-    // Note: Skipping normal ETH transactions to reduce API calls and avoid rate limiting
 
     // Remove duplicates (same hash + same value)
     const uniqueTransactions = transactions.filter((tx, index, array) => {
