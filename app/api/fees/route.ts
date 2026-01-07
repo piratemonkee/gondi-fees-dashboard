@@ -9,38 +9,6 @@ export async function GET(request: Request) {
   try {
     console.log('🚀 Starting GONDI fee data fetch...');
     
-    // URGENT DEBUG: Test if we can make token API call at all in production
-    const url = new URL(request.url);
-    const debug = url.searchParams.get('debug');
-    
-    if (debug === 'token-test') {
-      console.log('🧪 EMERGENCY TOKEN TEST MODE');
-      const GONDI_CONTRACT = '0x4169447a424ec645f8a24dccfd8328f714dd5562';
-      const tokenUrl = `https://api.etherscan.io/v2/api?chainid=1&module=account&action=tokentx&address=${GONDI_CONTRACT}&startblock=0&endblock=99999999&sort=asc&apikey=${process.env.ETHERSCAN_API_KEY}`;
-      
-      try {
-        const response = await fetch(tokenUrl);
-        const data = await response.json();
-        console.log('🧪 Emergency token test result:', data.status, data.message);
-        console.log('🧪 Transaction count:', data.result?.length || 0);
-        
-        return NextResponse.json({
-          emergencyTest: true,
-          status: data.status,
-          message: data.message,
-          transactionCount: data.result?.length || 0,
-          apiKey: !!process.env.ETHERSCAN_API_KEY
-        });
-      } catch (error) {
-        console.log('🧪 Emergency token test failed:', error);
-        return NextResponse.json({
-          emergencyTest: true,
-          error: error instanceof Error ? error.message : String(error),
-          apiKey: !!process.env.ETHERSCAN_API_KEY
-        });
-      }
-    }
-    
     // === COMPREHENSIVE ENVIRONMENT VARIABLE AUDIT ===
     console.log('🌍 === ENVIRONMENT VARIABLE DEEP INSPECTION ===');
     const envVars = {
