@@ -251,14 +251,7 @@ export default function Home() {
       }
       setError(null);
       
-      // Add cache busting to ensure fresh data in production
-      const response = await fetch(`/api/fees?t=${Date.now()}`, {
-        cache: 'no-store',
-        headers: {
-          'Cache-Control': 'no-cache, no-store, must-revalidate',
-          'Pragma': 'no-cache'
-        }
-      });
+      const response = await fetch('/api/fees');
       const result = await response.json();
       
       if (result.success) {

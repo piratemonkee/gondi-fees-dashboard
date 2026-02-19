@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server';
 import { fetchEthereumTransactions } from '@/lib/blockchain';
 import { aggregateFees } from '@/lib/aggregate';
+import { findLatestTransaction, updateLastProcessedTransaction } from '@/lib/last-processed';
 
-// Force dynamic rendering for this API route
-export const dynamic = 'force-dynamic';
+// Cache the response for 5 minutes, then revalidate in the background (ISR)
+export const revalidate = 300;
 
 export async function GET(request: Request) {
   try {
@@ -58,6 +59,12 @@ export async function GET(request: Request) {
     const grandTotalUSD = Object.values(aggregated.currencyBreakdown).reduce((sum, breakdown) => sum + breakdown.totalUSD, 0);
     console.log(`✅ Aggregation complete! Total: $${grandTotalUSD.toFixed(2)}`);
 
+    // Save progress for incremental fetching within warm function instances
+    const latest = findLatestTransaction(transactions);
+    if (latest) {
+      updateLastProcessedTransaction('ethereum', latest.blockNumber, latest.timestamp, latest.hash);
+    }
+
     // Get recent transactions for display
     const { getMultipleTokenPrices } = await import('@/lib/prices');
     const { parseTransactionValue } = await import('@/lib/blockchain');
@@ -96,12 +103,6 @@ export async function GET(request: Request) {
       success: true,
       data: aggregated,
       recentTransactions,
-    }, {
-      headers: {
-        'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
-        'Pragma': 'no-cache',
-        'Expires': '0'
-      }
     });
   } catch (error) {
     console.error('Error fetching fees:', error);
